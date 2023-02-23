@@ -1,17 +1,39 @@
 version: "3"
 services:
-  app:
-    image: nusaraya/bpm:latest
-    container_name: bpm
-    restart: unless-stopped
-    working_dir: /var/www
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+  proxy:
+    image: nusaraya/proxy
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
     ports:
-      - 8888:8888
+      - 80:80
+    networks:
+      - nusaraya
     volumes:
       - ./www:/var/www
-  db:
+  php73:
+    image: nusaraya/php73
+    build:
+      context: .
+      dockerfile: php73/Dockerfile
+    container_name: php73
+    working_dir: /var/www
+    networks:
+      - nusaraya
+    volumes:
+      - ./www:/var/www
+  php74:
+    image: nusaraya/php74
+    build:
+      context: .
+      dockerfile: php74/Dockerfile
+    container_name: php74
+    working_dir: /var/www
+    networks:
+      - nusaraya
+    volumes:
+      - ./www:/var/www
+  bpmdb:
     image: postgres:11-alpine
     container_name: bpmdb
     restart: always
@@ -23,9 +45,18 @@ services:
     volumes:
       - ./data:/var/lib/postgresql/data
       - ./opt:/opt
-  # adminer:
-  #   image: adminer
-  #   container_name: bpmadminer
-  #   restart: always
-  #   ports:
-  #     - 8080:8080
+  citradb:
+    image: postgres:9-alpine
+    container_name: citradb
+    restart: always
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./citradata:/var/lib/postgresql/data
+      - ./opt:/opt
+networks:
+  nusaraya:
+    driver: bridge
